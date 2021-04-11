@@ -1,0 +1,50 @@
+strictness: veryhigh
+
+autodetect: true
+max-line-length: 88
+test-warnings: true
+doc-warnings: false
+member-warnings: false
+inherits:
+  - default
+ignore-paths:
+  - docs
+ignore-patterns:
+  - (^|/)skip(this)?(/|$)
+
+
+mypy:
+  run: true
+
+bandit:
+  run: true
+
+dodgy:
+  run: true
+
+mccabe:
+  run: true
+
+pylint:
+  disable:
+    - import-outside-toplevel
+
+pep8:
+  run: true
+  disable:
+    - W602
+    - W603
+  enable:
+    - W601
+
+pyflakes:
+  run: true
+  disable:
+    - F403
+    - F810
+
+#pep257:
+#  run: true
+#  disable:
+#    - D100
+#    - D101
