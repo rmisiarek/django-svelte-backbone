@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import views
 
+# api/auth/
 urlpatterns = [
     path('session/', view=views.SessionView.as_view(), name='api-session'),
     path('csrf/', view=views.GetCSRF.as_view(), name='api-csrf'),
