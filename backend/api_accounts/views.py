@@ -1,4 +1,6 @@
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
 
@@ -13,6 +15,7 @@ class UserView(AuthenticatedAPIView):
         return JsonResponse({'username': request.user.username})
 
 
+@method_decorator(csrf_protect, name='dispatch')
 class UserCreate(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
