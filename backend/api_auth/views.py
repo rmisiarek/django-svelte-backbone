@@ -5,13 +5,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.authentication import (BasicAuthentication,
                                            SessionAuthentication)
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
-
-class AuthenticatedAPIView(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAuthenticated]
+from backend.auth import AuthenticatedAPIView
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
@@ -73,9 +69,3 @@ class GetCSRF(APIView):
         response = JsonResponse({'detail': 'OK'})
         response['X-CSRFToken'] = get_token(request)
         return response
-
-
-class UserView(AuthenticatedAPIView):
-    @staticmethod
-    def get(request):
-        return JsonResponse({'username': request.user.username})
