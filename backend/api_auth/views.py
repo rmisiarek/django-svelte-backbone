@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework.authentication import (BasicAuthentication,
                                            SessionAuthentication)
 from rest_framework.views import APIView
@@ -21,6 +21,7 @@ class SessionView(APIView):
         return JsonResponse({'isAuthenticated': False})
 
 
+@method_decorator(csrf_protect, name='dispatch')
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class LoginView(APIView):
     @staticmethod

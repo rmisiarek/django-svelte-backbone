@@ -1,0 +1,8 @@
+{% autoescape off %}
+    Hi {{ user.first_name }},
+
+    Please click on the link below to finish your registration process:
+
+    http://{{ domain }}{% url 'api-accounts-activate' uidb64=uid token=token %}
+
+{% endautoescape %}
