@@ -36,7 +36,8 @@ VENDOR_APPS = [
 ]
 
 API_APPS = [
-    'api_users.apps.ApiUsersConfig',
+    'api_auth.apps.ApiAuthConfig',
+    'api_accounts.apps.ApiAccountsConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + VENDOR_APPS + API_APPS
@@ -66,7 +67,7 @@ REST_FRAMEWORK = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR.parent, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -80,6 +81,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+
+AUTH_USER_MODEL = 'api_accounts.CustomUser'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_USE_TLS = True
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST_USER = '---@gmail.com'
+# EMAIL_HOST_PASSWORD = '---'  # noqa
+# EMAIL_PORT = 587
 
 
 # Database
