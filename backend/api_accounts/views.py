@@ -6,14 +6,16 @@ from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from api_accounts.models import CustomUser
-from api_accounts.serializers import CustomUserSerializer
+from api_accounts.serializers import (ChangePasswordSerializer,
+                                      CreateCustomUserSerializer)
 from api_auth.tokens import account_activation_token
+from backend import response
 from backend.auth import AuthenticatedAPIView
 
 logger = logging.getLogger(__name__)
@@ -27,12 +29,13 @@ class UserView(AuthenticatedAPIView):
 
 
 @method_decorator(csrf_protect, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 class UserCreateView(APIView):
     permission_classes = (AllowAny,)
 
     @staticmethod
     def post(request):
-        serialized = CustomUserSerializer(data=request.data)
+        serialized = CreateCustomUserSerializer(data=request.data)
         if serialized.is_valid() is False:
             logger.warning(serialized.errors)
             return JsonResponse(
@@ -80,6 +83,7 @@ class ActivateAccountView(APIView):
             user.is_active = True
             user.email_confirmed = True
             user.save()
+
             return JsonResponse(
                 {
                     'detail': 'Your account have been confirmed.'
@@ -90,3 +94,37 @@ class ActivateAccountView(APIView):
                 'detail': 'The confirmation link was invalid.'
             }, status=status.HTTP_400_BAD_REQUEST
         )
+
+
+@method_decorator(csrf_protect, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class ChangePasswordView(AuthenticatedAPIView):
+    @staticmethod
+    def put(request):
+        if request.user.is_anonymous:
+            return response.json_401(
+                msg='Only logged in user can change the password.'
+            )
+
+        serialized = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if serialized.is_valid() is False:
+            logger.warning(serialized.errors)
+            return response.json_400(msg='Invalid data.')
+
+        serialized.validated_data.pop('password2')
+        password = serialized.validated_data.pop('password1')
+
+        user = CustomUser.objects.get(
+            pk=request.user.pk,
+            is_active=True,
+            email_confirmed=True,
+        )
+
+        user.set_password(password)
+        user.save()
+
+        return response.json_200(msg='Password changed.')

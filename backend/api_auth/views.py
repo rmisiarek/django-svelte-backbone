@@ -8,10 +8,7 @@ from rest_framework.authentication import (BasicAuthentication,
                                            SessionAuthentication)
 from rest_framework.views import APIView
 
-from backend.auth import AuthenticatedAPIView
 
-
-@method_decorator(ensure_csrf_cookie, name='dispatch')
 class SessionView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication]
 
@@ -59,7 +56,7 @@ class LoginView(APIView):
         return JsonResponse({'detail': 'OK'}, status=status.HTTP_200_OK)
 
 
-class LogoutView(AuthenticatedAPIView):
+class LogoutView(APIView):
     @staticmethod
     def get(request):
         if not request.user.is_authenticated:

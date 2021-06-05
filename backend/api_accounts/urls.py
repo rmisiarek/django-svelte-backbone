@@ -21,4 +21,10 @@ urlpatterns = [
         view=views.ActivateAccountView.as_view(),
         name='api-accounts-activate'
     ),
+
+    path(
+        route='change-password/',
+        view=views.ChangePasswordView.as_view(),
+        name='api-accounts-change-password'
+    ),
 ]
