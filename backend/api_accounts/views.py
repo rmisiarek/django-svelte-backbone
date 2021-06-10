@@ -86,7 +86,7 @@ class ActivateAccountView(APIView):
 
             return JsonResponse(
                 {
-                    'detail': 'Your account have been confirmed.'
+                    'detail': 'Your account have been activated.'
                 }, status=status.HTTP_200_OK)
 
         return JsonResponse(
@@ -101,9 +101,9 @@ class ActivateAccountView(APIView):
 class ChangePasswordView(AuthenticatedAPIView):
     @staticmethod
     def put(request):
-        if request.user.is_anonymous:
-            return response.json_401(
-                msg='Only logged in user can change the password.'
+        if request.user.is_anonymous or request.user.is_superuser:
+            return response.json_400(
+                msg='Password can\'t be changed.'
             )
 
         serialized = ChangePasswordSerializer(
@@ -118,11 +118,14 @@ class ChangePasswordView(AuthenticatedAPIView):
         serialized.validated_data.pop('password2')
         password = serialized.validated_data.pop('password1')
 
-        user = CustomUser.objects.get(
-            pk=request.user.pk,
-            is_active=True,
-            email_confirmed=True,
-        )
+        try:
+            user = CustomUser.objects.get(
+                pk=request.user.pk,
+                is_active=True,
+                email_confirmed=True,
+            )
+        except CustomUser.DoesNotExist:
+            return response.json_400(msg='No such user or account is not activated.')
 
         user.set_password(password)
         user.save()

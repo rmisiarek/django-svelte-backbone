@@ -27,6 +27,7 @@ class LoginView(APIView):
     def post(request):
         username = request.data.get('username')
         password = request.data.get('password')
+        remember_me = request.data.get('remember_me')
 
         if username is None or password is None:
             return JsonResponse(
@@ -52,6 +53,8 @@ class LoginView(APIView):
             )
 
         login(request, user)
+        if not remember_me:
+            request.session.set_expiry(0)
 
         return JsonResponse({'detail': 'OK'}, status=status.HTTP_200_OK)
 
