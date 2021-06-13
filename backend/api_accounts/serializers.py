@@ -1,7 +1,12 @@
+from django.contrib.auth.password_validation import (get_password_validators,
+                                                     validate_password)
+from django.core import exceptions
 from django.utils.html import escape
 from rest_framework import serializers
 
 from api_accounts.models import CustomUser
+# TODO: change that:
+from backend.settings.development import AUTH_PASSWORD_VALIDATORS
 
 
 class CreateCustomUserSerializer(serializers.ModelSerializer):
@@ -14,14 +19,10 @@ class CreateCustomUserSerializer(serializers.ModelSerializer):
         fields = ('first_name', 'email', 'password1', 'password2')
 
     def validate(self, attrs):
-        password1 = attrs.get('password1')
-        password2 = attrs.get('password2')
+        password1 = attrs.get('password1', '')
+        password2 = attrs.get('password2', '')
 
-        if password1 is None or password2 is None:
-            raise serializers.ValidationError('Passwords do not match.')
-
-        if password1 != password2:
-            raise serializers.ValidationError('Passwords do not match.')
+        _passwords_validator(password1=password1, password2=password2)
 
         return attrs
 
@@ -48,22 +49,36 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         fields = ('old_password', 'password1', 'password2')
 
     def validate(self, attrs):
-        password1 = attrs.get('password1')
-        password2 = attrs.get('password2')
+        password1 = attrs.get('password1', '')
+        password2 = attrs.get('password2', '')
 
-        if password1 is None or password2 is None:
-            raise serializers.ValidationError('Passwords do not match.')
-
-        if password1 != password2:
-            raise serializers.ValidationError('Passwords do not match.')
+        _passwords_validator(password1=password1, password2=password2)
 
         return attrs
 
     def validate_old_password(self, value):
-        print('context = ', self.context)
         user = self.context['request'].user
-        print('user = ', user)
         if not user.check_password(value):
             raise serializers.ValidationError('Old password is not correct.')
 
         return value
+
+
+def _passwords_validator(password1: str, password2: str):
+    if password1 == '' or password2 == '':
+        raise serializers.ValidationError('Passwords do not match.')
+
+    if password1 != password2:
+        raise serializers.ValidationError('Passwords do not match.')
+
+    try:
+        validate_password(
+            password=password1,
+            password_validators=get_password_validators(
+                AUTH_PASSWORD_VALIDATORS
+            )
+        )
+    except exceptions.ValidationError as e:
+        raise exceptions.ValidationError({
+            'password': e.messages
+        })
