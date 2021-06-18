@@ -25,16 +25,9 @@ class SessionView(APIView):
 class LoginView(APIView):
     @staticmethod
     def post(request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+        username = request.data.get('username', '')
+        password = request.data.get('password', '')
         remember_me = request.data.get('remember_me')
-
-        if username is None or password is None:
-            return JsonResponse(
-                {
-                    'detail': 'Please provide username and password.'
-                }, status=status.HTTP_400_BAD_REQUEST
-            )
 
         if username == '' or password == '':  # noqa: B105
             return JsonResponse(

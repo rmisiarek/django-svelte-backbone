@@ -13,8 +13,9 @@ from rest_framework.views import APIView
 
 from api_accounts.models import CustomUser
 from api_accounts.serializers import (ChangePasswordSerializer,
-                                      CreateCustomUserSerializer)
-from api_auth.tokens import account_activation_token
+                                      CreateCustomUserSerializer,
+                                      SetPasswordSerializer)
+from api_auth.tokens import account_activation_token, reset_password_token
 from backend import response
 from backend.auth import AuthenticatedAPIView
 
@@ -131,3 +132,82 @@ class ChangePasswordView(AuthenticatedAPIView):
         user.save()
 
         return response.json_200(msg='Password changed.')
+
+
+# @method_decorator(csrf_protect, name='post')
+@method_decorator(ensure_csrf_cookie, name='post')
+class ResetPasswordView(APIView):
+    permission_classes = (AllowAny,)
+
+    @staticmethod
+    def post(request):
+        email = request.data.get('email', '')
+
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            logger.error('No user with %s e-mail.', email)
+            return response.json_400()
+
+        current_site = get_current_site(request)
+        message = render_to_string('api_accounts/password_reset_email.html', {
+            'user': user,
+            'domain': current_site.domain,
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': reset_password_token.make_token(user),
+        })
+
+        subject = 'Password reset link'
+        user.email_user(subject, message)
+
+        return response.json_200(msg='')
+
+    @staticmethod
+    def get(request, uidb64, token):
+        try:
+            uid = force_text(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
+
+        if user is not None and reset_password_token.check_token(user, token):
+            return response.json_data_200(data={'id': uidb64, 'token': token})
+
+        return response.json_400(msg='The confirmation link was invalid.')
+
+
+@method_decorator(csrf_protect, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class SetNewPasswordView(APIView):
+    permission_classes = (AllowAny,)
+
+    @staticmethod
+    def post(request):
+        uidb64 = request.data.get('id', '')
+        token = request.data.get('token', '')
+
+        try:
+            uid = force_text(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(
+                pk=uid,
+                is_active=True,
+                email_confirmed=True,
+            )
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
+
+        if user is not None and reset_password_token.check_token(user, token):
+            serialized = SetPasswordSerializer(
+                data=request.data, context={'request': request}
+            )
+            if not serialized.is_valid():
+                logger.warning(serialized.errors)
+                return response.json_400(msg='Invalid data.')
+
+            password = serialized.validated_data.pop('password1')
+            user.set_password(password)
+            user.save()
+
+            return response.json_200(msg='Password changed.')
+
+        return response.json_400()

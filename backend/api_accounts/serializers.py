@@ -51,8 +51,9 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         password1 = attrs.get('password1', '')
         password2 = attrs.get('password2', '')
+        user = self.context['request'].user
 
-        _passwords_validator(password1=password1, password2=password2)
+        _passwords_validator(password1=password1, password2=password2, user=user)
 
         return attrs
 
@@ -64,7 +65,25 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         return value
 
 
-def _passwords_validator(password1: str, password2: str):
+class SetPasswordSerializer(serializers.ModelSerializer):
+    password1 = serializers.CharField(write_only=True, required=True)
+    password2 = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('password1', 'password2')
+
+    def validate(self, attrs):
+        password1 = attrs.get('password1', '')
+        password2 = attrs.get('password2', '')
+        user = self.context['request'].user
+
+        _passwords_validator(password1=password1, password2=password2, user=user)
+
+        return attrs
+
+
+def _passwords_validator(password1: str, password2: str, user: CustomUser = None):
     if password1 == '' or password2 == '':
         raise serializers.ValidationError('Passwords do not match.')
 
@@ -74,6 +93,7 @@ def _passwords_validator(password1: str, password2: str):
     try:
         validate_password(
             password=password1,
+            user=user,
             password_validators=get_password_validators(
                 AUTH_PASSWORD_VALIDATORS
             )

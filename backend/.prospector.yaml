@@ -28,6 +28,7 @@ mccabe:
 pylint:
   disable:
     - import-outside-toplevel
+    - logging-fstring-interpolation
 
 pep8:
   run: true
