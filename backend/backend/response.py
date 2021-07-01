@@ -33,3 +33,12 @@ def json_data_200(data: dict, msg: str = ''):
             'data': data,
         }, status=status.HTTP_200_OK
     )
+
+
+def msg_with_data_400(data: dict, msg: str = ''):
+    return JsonResponse(
+        {
+            'detail': msg,
+            'data': data,
+        }, status=status.HTTP_400_BAD_REQUEST
+    )
